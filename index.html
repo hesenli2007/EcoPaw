@@ -89,12 +89,36 @@
                         <button onclick="router('login')" class="btn-hover bg-green-600 text-white px-6 py-2.5 rounded-full font-bold shadow-lg" data-key="nav_login">Giriş</button>
                     </div>
                 </div>
+
+                <div class="md:hidden flex items-center">
+                    <div id="auth-section-mobile" class="mr-2"></div>
+                    <button onclick="toggleMobileMenu()" class="text-gray-600 hover:text-green-600 focus:outline-none">
+                        <i class="fa-solid fa-bars text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-gray-100">
+            <div class="px-4 pt-2 pb-4 space-y-1">
+                <button onclick="router('home'); toggleMobileMenu()" class="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-green-600 hover:bg-green-50" data-key="nav_home">Ana Səhifə</button>
+                <button onclick="router('donate'); toggleMobileMenu()" class="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-green-600 hover:bg-green-50" data-key="nav_donate">Bağış Et</button>
+                <button onclick="router('volunteer'); toggleMobileMenu()" class="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-green-600 hover:bg-green-50" data-key="nav_volunteer">Könüllü Ol</button>
+                
+                <div class="px-3 py-2">
+                     <select onchange="changeLanguage(this.value); toggleMobileMenu()" class="w-full bg-gray-100 border border-gray-300 text-gray-700 py-2 px-4 rounded-lg focus:outline-none focus:border-green-600 font-bold text-sm uppercase">
+                        <option value="az">AZ</option>
+                        <option value="en">EN</option>
+                        <option value="tr">TR</option>
+                        <option value="ru">RU</option>
+                    </select>
+                </div>
             </div>
         </div>
     </nav>
 
     <main id="app-content" class="min-h-screen pb-20 pt-4">
-        </main>
+    </main>
 
     <footer class="bg-gray-800 text-white py-12 mt-10 rounded-t-3xl">
         <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -131,7 +155,6 @@
     </footer>
 
     <script type="module">
-        // Added createUserWithEmailAndPassword to imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged, updateProfile, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, query, onSnapshot, doc, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -157,7 +180,7 @@
         let isVolunteer = false;
         let currentLang = 'az';
 
-        // --- TRANSLATIONS (Updated with Xankendi address) ---
+        // --- TRANSLATIONS ---
         const translations = {
             az: {
                 nav_home: "Ana Səhifə", nav_donate: "Bağış Et", nav_volunteer: "Könüllü Ol", nav_login: "Giriş", nav_logout: "Çıxış",
@@ -174,7 +197,8 @@
                 news_3_tag: "Tədbirlər", news_3_title: "Həftəsonu könüllü görüşü", news_3_desc: "Bütün heyvansevərləri mərkəzi parka dəvət edirik.",
                 login_title: "Xoş Gəldiniz", login_tab: "Giriş", register_tab: "Qeydiyyat",
                 email_label: "Email ünvanı", pass_label: "Şifrə", name_label: "Ad və Soyad", login_btn: "Giriş Et", register_btn: "Qeydiyyatdan Keç",
-                no_account: "Hesabınız yoxdur?", has_account: "Artıq hesabınız var?", register_link: "Qeydiyyatdan keçin", login_link: "Giriş edin"
+                no_account: "Hesabınız yoxdur?", has_account: "Artıq hesabınız var?", register_link: "Qeydiyyatdan keçin", login_link: "Giriş edin",
+                profile_title: "Şəxsi Kabinet", profile_email: "Email", profile_status: "Status", profile_role_vol: "Könüllü", profile_role_user: "İstifadəçi"
             },
             en: {
                 nav_home: "Home", nav_donate: "Donate", nav_volunteer: "Volunteer", nav_login: "Login", nav_logout: "Logout",
@@ -191,7 +215,8 @@
                 news_3_tag: "Events", news_3_title: "Volunteer Meetup", news_3_desc: "Inviting all animal lovers.",
                 login_title: "Welcome Back", login_tab: "Login", register_tab: "Register",
                 email_label: "Email Address", pass_label: "Password", name_label: "Full Name", login_btn: "Login", register_btn: "Sign Up",
-                no_account: "Don't have an account?", has_account: "Already have an account?", register_link: "Sign up", login_link: "Login"
+                no_account: "Don't have an account?", has_account: "Already have an account?", register_link: "Sign up", login_link: "Login",
+                profile_title: "My Profile", profile_email: "Email", profile_status: "Status", profile_role_vol: "Volunteer", profile_role_user: "User"
             },
             tr: {
                 nav_home: "Ana Sayfa", nav_donate: "Bağış Yap", nav_volunteer: "Gönüllü Ol", nav_login: "Giriş", nav_logout: "Çıkış",
@@ -208,7 +233,8 @@
                 news_3_tag: "Etkinlikler", news_3_title: "Gönüllü Buluşması", news_3_desc: "Herkesi bekliyoruz.",
                 login_title: "Hoş Geldiniz", login_tab: "Giriş", register_tab: "Kayıt Ol",
                 email_label: "E-posta", pass_label: "Şifre", name_label: "Ad Soyad", login_btn: "Giriş Yap", register_btn: "Kayıt Ol",
-                no_account: "Hesabınız yok mu?", has_account: "Hesabınız var mı?", register_link: "Kayıt olun", login_link: "Giriş yapın"
+                no_account: "Hesabınız yok mu?", has_account: "Hesabınız var mı?", register_link: "Kayıt olun", login_link: "Giriş yapın",
+                profile_title: "Profilim", profile_email: "E-posta", profile_status: "Durum", profile_role_vol: "Gönüllü", profile_role_user: "Kullanıcı"
             },
             ru: {
                 nav_home: "Главная", nav_donate: "Пожертвовать", nav_volunteer: "Волонтерство", nav_login: "Вход", nav_logout: "Выход",
@@ -225,7 +251,8 @@
                 news_3_tag: "События", news_3_title: "Встреча волонтеров", news_3_desc: "Приглашаем всех.",
                 login_title: "Добро пожаловать", login_tab: "Вход", register_tab: "Регистрация",
                 email_label: "Email", pass_label: "Пароль", name_label: "ФИО", login_btn: "Войти", register_btn: "Регистрация",
-                no_account: "Нет аккаунта?", has_account: "Есть аккаунт?", register_link: "Создать", login_link: "Войти"
+                no_account: "Нет аккаунта?", has_account: "Есть аккаунт?", register_link: "Создать", login_link: "Войти",
+                profile_title: "Мой Профиль", profile_email: "Email", profile_status: "Статус", profile_role_vol: "Волонтер", profile_role_user: "Пользователь"
             }
         };
 
@@ -280,6 +307,11 @@
             }
         }
 
+        window.toggleMobileMenu = () => {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+        }
+
         window.enableVolunteerTheme = () => {
             document.body.classList.add('volunteer-mode');
             const btns = document.querySelectorAll('.bg-green-600');
@@ -310,27 +342,40 @@
 
         window.updateAuthUI = () => {
             const authSection = document.getElementById('auth-section');
-            if (!authSection) return;
-
-            if (currentUser) {
-                const volBadge = isVolunteer ? `<span class="bg-yellow-100 text-yellow-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded shadow-sm">Könüllü</span>` : '';
-                authSection.innerHTML = `
-                    <div class="flex items-center space-x-3 fade-in">
-                        ${volBadge}
-                        <div class="flex flex-col text-right hidden md:block">
-                            <span class="text-sm font-bold text-gray-700">${currentUser.displayName || 'İstifadəçi'}</span>
-                        </div>
-                        <button onclick="handleLogout()" class="text-gray-500 hover:text-red-500 transition p-2 rounded-full hover:bg-gray-100" title="${translations[currentLang].nav_logout}">
-                            <i class="fa-solid fa-right-from-bracket text-xl"></i>
+            const authSectionMobile = document.getElementById('auth-section-mobile');
+            
+            const renderAuthHTML = (forMobile = false) => {
+                 if (currentUser) {
+                    const volBadge = isVolunteer ? `<span class="bg-yellow-100 text-yellow-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded shadow-sm">Könüllü</span>` : '';
+                    
+                    // Display name clickable button for profile
+                    const profileButton = `
+                        <button onclick="router('profile'); ${forMobile ? 'toggleMobileMenu()' : ''}" class="text-sm font-bold text-gray-700 hover:text-green-600 transition flex items-center">
+                           ${currentUser.displayName || 'İstifadəçi'}
                         </button>
-                    </div>
-                `;
-            } else {
-                const loginText = translations[currentLang].nav_login || "Giriş";
-                authSection.innerHTML = `
-                    <button onclick="router('login')" class="btn-hover bg-green-600 text-white px-6 py-2.5 rounded-full font-bold shadow-lg transition-colors hover:bg-green-700">${loginText}</button>
-                `;
-            }
+                    `;
+
+                    return `
+                        <div class="flex items-center space-x-3 fade-in">
+                            ${volBadge}
+                            <div class="flex flex-col text-right">
+                                ${profileButton}
+                            </div>
+                            <button onclick="handleLogout()" class="text-gray-500 hover:text-red-500 transition p-2 rounded-full hover:bg-gray-100" title="${translations[currentLang].nav_logout}">
+                                <i class="fa-solid fa-right-from-bracket text-xl"></i>
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    const loginText = translations[currentLang].nav_login || "Giriş";
+                    return `
+                        <button onclick="router('login'); ${forMobile ? 'toggleMobileMenu()' : ''}" class="btn-hover bg-green-600 text-white px-6 py-2.5 rounded-full font-bold shadow-lg transition-colors hover:bg-green-700 text-sm">${loginText}</button>
+                    `;
+                }
+            };
+
+            if (authSection) authSection.innerHTML = renderAuthHTML(false);
+            if (authSectionMobile) authSectionMobile.innerHTML = renderAuthHTML(true);
         }
 
         // --- ROUTING ---
@@ -343,17 +388,17 @@
                                 <span class="text-green-600">EcoPaw:</span> <span data-key="welcome_hero">${translations[currentLang].welcome_hero}</span>
                             </h1>
                             <p class="text-lg text-gray-600 mb-8" data-key="sub_hero">${translations[currentLang].sub_hero}</p>
-                            <div class="flex space-x-4">
-                                <button onclick="router('donate')" class="btn-hover bg-green-600 text-white px-8 py-3.5 rounded-full font-bold shadow-xl hover:bg-green-700 transition-colors">
+                            <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+                                <button onclick="router('donate')" class="btn-hover bg-green-600 text-white px-8 py-3.5 rounded-full font-bold shadow-xl hover:bg-green-700 transition-colors w-full sm:w-auto">
                                     ${translations[currentLang].donate_btn} <i class="fa-solid fa-heart ml-2"></i>
                                 </button>
-                                <button onclick="router('volunteer')" class="btn-hover bg-white border-2 border-green-600 text-green-600 px-8 py-3.5 rounded-full font-bold hover:bg-green-50 transition-colors">
+                                <button onclick="router('volunteer')" class="btn-hover bg-white border-2 border-green-600 text-green-600 px-8 py-3.5 rounded-full font-bold hover:bg-green-50 transition-colors w-full sm:w-auto">
                                     ${translations[currentLang].nav_volunteer}
                                 </button>
                             </div>
                         </div>
                         <div class="md:w-1/2 flex justify-center">
-                            <img src="https://placehold.co/500x400/e2e8f0/16a34a?text=EcoPaw+Khankendi" alt="Happy Animals" class="rounded-3xl shadow-2xl transform rotate-2 hover:rotate-0 transition duration-500 border-4 border-white">
+                            <img src="https://placehold.co/500x400/e2e8f0/16a34a?text=EcoPaw+Khankendi" alt="Happy Animals" class="rounded-3xl shadow-2xl transform rotate-2 hover:rotate-0 transition duration-500 border-4 border-white w-full max-w-md">
                         </div>
                     </div>
                 </div>
@@ -552,12 +597,56 @@
                         </div>
                     </div>
                 </div>
-            `
+            `,
+            profile: () => {
+                if (!currentUser) return views.login();
+                return `
+                <div class="max-w-2xl mx-auto px-4 py-16 fade-in">
+                    <div class="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
+                         <div class="bg-green-600 h-32 relative">
+                            <div class="absolute -bottom-16 left-1/2 transform -translate-x-1/2">
+                                <div class="w-32 h-32 bg-white rounded-full border-4 border-white shadow-lg flex items-center justify-center text-5xl text-gray-300">
+                                    <i class="fa-solid fa-user"></i>
+                                </div>
+                            </div>
+                         </div>
+                         <div class="pt-20 pb-8 px-8 text-center">
+                            <h2 class="text-3xl font-bold text-gray-800 mb-1" data-key="profile_title">${translations[currentLang].profile_title}</h2>
+                            <p class="text-xl font-medium text-green-600 mb-6">${currentUser.displayName}</p>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left max-w-md mx-auto">
+                                <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                                    <p class="text-xs text-gray-500 uppercase tracking-wide mb-1" data-key="profile_email">${translations[currentLang].profile_email}</p>
+                                    <p class="font-bold text-gray-800 break-all">${currentUser.email}</p>
+                                </div>
+                                <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                                    <p class="text-xs text-gray-500 uppercase tracking-wide mb-1" data-key="profile_status">${translations[currentLang].profile_status}</p>
+                                    <p class="font-bold text-gray-800">
+                                        ${isVolunteer ? 
+                                            `<span class="text-yellow-600"><i class="fa-solid fa-star mr-1"></i> <span data-key="profile_role_vol">${translations[currentLang].profile_role_vol}</span></span>` : 
+                                            `<span class="text-gray-600"><i class="fa-regular fa-user mr-1"></i> <span data-key="profile_role_user">${translations[currentLang].profile_role_user}</span></span>`
+                                        }
+                                    </p>
+                                </div>
+                            </div>
+
+                            <button onclick="handleLogout()" class="mt-8 text-red-500 font-bold hover:bg-red-50 px-6 py-2 rounded-full transition">
+                                <i class="fa-solid fa-right-from-bracket mr-2"></i> <span data-key="nav_logout">${translations[currentLang].nav_logout}</span>
+                            </button>
+                         </div>
+                    </div>
+                </div>
+                `;
+            }
         };
 
         window.router = (viewName) => {
             const content = document.getElementById('app-content');
-            content.innerHTML = `<div id="view-${viewName}" class="fade-in">${views[viewName]()}</div>`;
+            if (views[viewName]) {
+                content.innerHTML = `<div id="view-${viewName}" class="fade-in">${views[viewName]()}</div>`;
+            } else {
+                content.innerHTML = `<div class="text-center py-20">Səhifə tapılmadı</div>`;
+            }
             window.scrollTo(0,0);
         };
 
@@ -594,7 +683,6 @@
                 if (email && pass) {
                     await signInWithEmailAndPassword(auth, email, pass);
                 } else {
-                    // Fallback demo for empty inputs if needed, or error
                     alert("Zəhmət olmasa email və şifrə daxil edin.");
                     return;
                 }
@@ -607,24 +695,19 @@
             }
         };
 
-        // --- FIXED REGISTER FUNCTION ---
         window.handleRegister = async (e) => {
             e.preventDefault();
             
-            // 1. Get Values from HTML
             const name = document.getElementById('regName').value;
             const email = document.getElementById('regEmail').value;
             const password = document.getElementById('regPass').value;
             
             try {
-                // 2. Create User using Standard Auth (Fixes Admin Error)
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 const user = userCredential.user;
 
-                // 3. Update Profile Name
                 await updateProfile(user, { displayName: name });
                 
-                // 4. Save to Firestore
                 const userRef = doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data');
                 await setDoc(userRef, {
                     name: name,
@@ -658,11 +741,10 @@
             const amount = document.getElementById('donateAmount').value;
             if (amount < 1) { alert("Minimum məbləğ 1 AZN olmalıdır."); return; }
             try {
-               // Demo save
                if(auth.currentUser) {
-                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'donations'), {
-                        userId: auth.currentUser.uid, amount: amount, timestamp: new Date()
-                    });
+                   await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'donations'), {
+                       userId: auth.currentUser.uid, amount: amount, timestamp: new Date()
+                   });
                }
                alert(`Təşəkkürlər! ${amount} AZN uğurla bağışlandı.`);
                router('home');
