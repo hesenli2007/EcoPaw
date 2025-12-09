@@ -177,7 +177,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, updateProfile, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, RecaptchaVerifier, signInWithPhoneNumber, PhoneAuthProvider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, updateProfile, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, query, onSnapshot, doc, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         // --- FIREBASE CONFIG ---
@@ -200,7 +200,7 @@
         let currentUser = null;
         let isVolunteer = false;
         let currentLang = 'az';
-        let confirmationResult = null; // For phone auth
+        let currentPhone = null; // Store phone for profile display
 
         // --- TRANSLATIONS ---
         const translations = {
@@ -369,9 +369,15 @@
                     const userRef = doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data');
                     try {
                         const docSnap = await getDoc(userRef);
-                        if (docSnap.exists() && docSnap.data().isVolunteer) {
-                            isVolunteer = true;
-                            enableVolunteerTheme();
+                        if (docSnap.exists()) {
+                            const data = docSnap.data();
+                            if(data.isVolunteer) {
+                                isVolunteer = true;
+                                enableVolunteerTheme();
+                            }
+                            if(data.phone) {
+                                currentPhone = data.phone;
+                            }
                         }
                     } catch (e) {
                         console.log("Profile check failed or new user");
@@ -380,49 +386,13 @@
                 } else {
                     currentUser = null;
                     isVolunteer = false;
+                    currentPhone = null;
                     disableVolunteerTheme();
                     updateAuthUI();
                 }
             });
             router('home');
         };
-
-        // --- PHONE AUTH CONFIG ---
-        window.setupRecaptcha = () => {
-            if(!window.recaptchaVerifier) {
-                window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-                    'size': 'invisible',
-                    'callback': (response) => {
-                        console.log("Recaptcha verified");
-                    }
-                });
-            }
-        }
-
-        window.sendOtp = async () => {
-            const phone = document.getElementById('volPhone').value;
-            if(!phone) { alert("Zəhmət olmasa nömrəni daxil edin"); return; }
-            
-            setupRecaptcha();
-            const appVerifier = window.recaptchaVerifier;
-
-            try {
-                // IMPORTANT: In a real app, 'signInWithPhoneNumber' logs you in. 
-                // Since the user is ALREADY logged in via email, this is for verification.
-                // We will simulate verification by sending the code. 
-                // Note: Phone number must include country code (+994...)
-                confirmationResult = await signInWithPhoneNumber(auth, phone, appVerifier);
-                
-                document.getElementById('otp-section').classList.remove('hidden');
-                document.getElementById('send-code-btn').classList.add('hidden');
-                alert("SMS kodu göndərildi!");
-            } catch (error) {
-                console.error("SMS Error:", error);
-                alert("SMS göndərilə bilmədi. Nömrəni (+994...) formatında yazın və Firebase konsolunda Phone Auth aktiv olduğundan əmin olun.");
-                // Reset captcha
-                if(window.recaptchaVerifier) window.recaptchaVerifier.clear();
-            }
-        }
 
         // --- UI FUNCTIONS ---
         window.changeLanguage = (lang) => {
@@ -699,15 +669,9 @@
                                             <label class="block text-sm font-bold text-gray-700 mb-2" data-key="vol_form_phone">${translations[currentLang].vol_form_phone}</label>
                                             <div class="flex gap-2">
                                                 <input type="tel" id="volPhone" required placeholder="+994 50 000 00 00" class="w-full border-2 border-gray-200 rounded-xl py-3 px-4 focus:border-green-600 focus:ring-0 outline-none transition-colors">
-                                                <button type="button" id="send-code-btn" onclick="sendOtp()" class="bg-blue-500 text-white px-4 rounded-xl hover:bg-blue-600 text-sm whitespace-nowrap" data-key="vol_send_code">${translations[currentLang].vol_send_code}</button>
                                             </div>
                                         </div>
                                         
-                                        <div id="otp-section" class="hidden">
-                                            <label class="block text-sm font-bold text-gray-700 mb-2" data-key="vol_enter_code">${translations[currentLang].vol_enter_code}</label>
-                                            <input type="text" id="otpCode" placeholder="123456" class="w-full border-2 border-gray-200 rounded-xl py-3 px-4 focus:border-green-600 focus:ring-0 outline-none transition-colors mb-2">
-                                        </div>
-
                                         <div><label class="block text-sm font-bold text-gray-700 mb-2" data-key="vol_form_address">${translations[currentLang].vol_form_address}</label><input type="text" required class="w-full border-2 border-gray-200 rounded-xl py-3 px-4 focus:border-green-600 focus:ring-0 outline-none transition-colors"></div>
                                         <div><label class="block text-sm font-bold text-gray-700 mb-2" data-key="vol_form_tc">${translations[currentLang].vol_form_tc}</label><input type="text" required class="w-full border-2 border-gray-200 rounded-xl py-3 px-4 focus:border-green-600 focus:ring-0 outline-none transition-colors"><p class="text-xs text-gray-400 mt-2 bg-gray-50 p-2 rounded"><i class="fa-solid fa-info-circle mr-1"></i> Açarı götürərkən təsdiq üçün lazımdır.</p></div>
                                         
@@ -828,8 +792,8 @@
                                     <p class="text-xs text-gray-500 uppercase tracking-wide mb-1" data-key="profile_email">${translations[currentLang].profile_email}</p>
                                     <p class="font-bold text-gray-800 break-all">${currentUser.email}</p>
                                     ${currentUser.emailVerified ? 
-                                        '<span class="text-xs text-green-500"><i class="fa-solid fa-check-circle"></i> Təsdiqlənib</span>' : 
-                                        '<span class="text-xs text-red-500"><i class="fa-solid fa-times-circle"></i> Təsdiqlənməyib</span>'}
+                                    '<span class="text-xs text-green-500"><i class="fa-solid fa-check-circle"></i> Təsdiqlənib</span>' : 
+                                    '<span class="text-xs text-red-500"><i class="fa-solid fa-times-circle"></i> Təsdiqlənməyib</span>'}
                                 </div>
                                 <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
                                     <p class="text-xs text-gray-500 uppercase tracking-wide mb-1" data-key="profile_status">${translations[currentLang].profile_status}</p>
@@ -840,6 +804,12 @@
                                         }
                                     </p>
                                 </div>
+                                ${currentPhone ? `
+                                <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 md:col-span-2">
+                                    <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">Telefon</p>
+                                    <p class="font-bold text-gray-800"><i class="fa-solid fa-phone mr-1 text-green-600"></i> ${currentPhone}</p>
+                                </div>
+                                ` : ''}
                             </div>
 
                             <button onclick="handleLogout()" class="mt-8 text-red-500 font-bold hover:bg-red-50 px-6 py-2 rounded-full transition">
@@ -945,6 +915,7 @@
             signOut(auth).then(() => {
                 currentUser = null;
                 isVolunteer = false;
+                currentPhone = null;
                 disableVolunteerTheme();
                 updateAuthUI();
                 router('home');
@@ -970,35 +941,22 @@
             e.preventDefault();
             if(!currentUser) return;
             const phone = document.getElementById('volPhone').value;
-            const otpCode = document.getElementById('otpCode').value;
-
-            if(!confirmationResult) {
-                alert("Zəhmət olmasa əvvəlcə nömrəni təsdiqləyin (Kod Göndər).");
-                return;
-            }
-
-            if(!otpCode) {
-                alert("Zəhmət olmasa SMS kodunu daxil edin.");
-                return;
-            }
 
             try {
-                // Confirm OTP
-                await confirmationResult.confirm(otpCode);
-                
-                // Save to DB
+                // Save to DB without verification
                 await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'data'), {
                     isVolunteer: true, phone: phone, role: "volunteer", updatedAt: new Date(), phoneVerified: true
                 }, { merge: true });
                 
                 isVolunteer = true;
+                currentPhone = phone;
                 enableVolunteerTheme();
                 updateAuthUI();
-                alert("Təbriklər, Siz artıq könüllüsünüz! Nömrəniz təsdiqləndi.");
+                alert("Təbriklər, Siz artıq könüllüsünüz!");
                 router('home');
             } catch (err) { 
                 console.error(err);
-                alert("Kod səhvdir və ya xəta baş verdi."); 
+                alert("Xəta baş verdi."); 
             }
         };
 
